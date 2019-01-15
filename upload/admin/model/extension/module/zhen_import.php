@@ -25,6 +25,7 @@ class ModelExtensionModuleZhenImport extends Model{
     2 - not find row with that name
   */
   public function updatePrice ($name, $price, $default_filter){
+     $name = trim($name);
      $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
 
     $this->db->query("SELECT * FROM " . DB_PREFIX . "product  WHERE " . 
@@ -47,6 +48,7 @@ class ModelExtensionModuleZhenImport extends Model{
       100 - need specify
   */
   public function updateCount ($name, $count, $default_filter){
+    $name = trim($name);
     $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
 
     $this->db->query("SELECT * FROM " . DB_PREFIX . "product  WHERE " . 
@@ -75,6 +77,7 @@ class ModelExtensionModuleZhenImport extends Model{
   }
 
   public function updateCount1C ($name, $count, $default_filter){
+     $name = trim($name);
      $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
 
     $select = $this->db->query("SELECT * FROM " . DB_PREFIX . "product  WHERE " . 
