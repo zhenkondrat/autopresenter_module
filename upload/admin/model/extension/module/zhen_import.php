@@ -26,6 +26,16 @@ class ModelExtensionModuleZhenImport extends Model{
   */
   public function updatePrice ($name, $price, $default_filter){
      $name = trim($name);
+
+     // $str = $name; 
+     // $charset = mb_detect_encoding($str);
+     // $str = iconv($charset, "UTF-8", $str);
+     // $str2 = preg_replace('/[^a-zA-Z0-9+\s-,.]/ui', '', $str ); 
+     // $name = $str2;
+
+     if($price==0)
+        return 0;
+      
      $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
 
     $this->db->query("SELECT * FROM " . DB_PREFIX . "product  WHERE " . 
