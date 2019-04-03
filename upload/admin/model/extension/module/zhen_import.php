@@ -32,6 +32,9 @@ class ModelExtensionModuleZhenImport extends Model{
      // $str = iconv($charset, "UTF-8", $str);
      // $str2 = preg_replace('/[^a-zA-Z0-9+\s-,.]/ui', '', $str ); 
      // $name = $str2;
+     $name = preg_replace('/"/', '&quot;', $name);
+     //mysql remove space and to lowercase
+     //SELECT REPLACE(LOWER(TRIM(name)), ' ', '') as ttt FROM `oc_product_description` WHERE `product_id` = 53
 
      if($price==0)
         return 0;
@@ -50,6 +53,47 @@ class ModelExtensionModuleZhenImport extends Model{
 
     return 0;
   }
+
+  public function updatePriceNew ($name, $price, $default_filter){
+       $name = trim($name);
+       $name = preg_replace('/\s+/', '', $name);
+       $str = $name; 
+       $charset = mb_detect_encoding($str);
+       $str = iconv($charset, "UTF-8", $str);
+       $str2 = preg_replace('/[^a-zA-Z0-9+\s-,.]/ui', '', $str ); 
+       $name = $str2;
+
+       //mysql remove spaces and convert to lowercase
+
+        // select product_id 
+        // from ( SELECT REPLACE(LOWER(TRIM(name)), ' ', '') as convertString, product_id FROM `oc_product_description` ) tempTable
+        // where convertString like '%kicxkap%'
+
+
+       if($price==0)
+          return 0;
+        
+       $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
+
+      $this->db->query("SELECT * FROM " . DB_PREFIX . "product  WHERE " .         
+        DB_PREFIX . "product.product_id = " .
+        " (select product_id " .
+        " from ( SELECT REPLACE(LOWER(TRIM(name)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "`oc_product_description` ) tempTable " .
+        " where convertString like '" . $filter . "')");      
+      if($this->db->countAffected()==0)
+        return 2;
+
+      $this->db->query("UPDATE " . DB_PREFIX . "product SET price = '".$price."' WHERE " . 
+        DB_PREFIX . "product.product_id = " .
+        " (select product_id " .
+        " from ( SELECT REPLACE(LOWER(TRIM(name)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "`oc_product_description` ) tempTable " .
+        " where convertString like '" . $filter . "')");  
+      if($this->db->countAffected()!=0)
+         return 1;
+
+      return 0;
+    }
+
   /*
     quantity id description:
       1 - present product
@@ -248,13 +292,13 @@ class ModelExtensionModuleZhenImport extends Model{
   }
 
   public function download(){      
-    $select = $this->db->query("SELECT pd.name, p.price, p.quantity "
+    $select = $this->db->query("SELECT pd.name, p.price, p.quantity, p.model "
                               ." FROM " . DB_PREFIX . "product p, " . DB_PREFIX . "product_description pd "
                               ." WHERE p.product_id  = pd.product_id ");
 
     $arr = [];   
     foreach ($select->rows as $result) {
-        $row = ['name' => $result['name'], 'price' => $result['price'], 'count' => $result['quantity'] ];
+        $row = ['name' => $result['name'], 'price' => $result['price'], 'count' => $result['quantity'], 'model' => $result['model'] ];
         array_push($arr, $row);
     }
 

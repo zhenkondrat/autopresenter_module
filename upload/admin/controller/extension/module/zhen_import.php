@@ -188,17 +188,19 @@ class ControllerExtensionModuleZhenImport extends Controller {
 
     //setCellValueByColumnAndRow($column, $row, $value)
     $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(0, 1, "№");
-    $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(1, 1, "Название");
-    $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(2, 1, "Цена");
-    $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(3, 1, "Количество");
+    $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(1, 1, "Модель");
+    $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(2, 1, "Название");
+    $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(3, 1, "Цена");
+    $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(4, 1, "Количество");
 
     $i=0;
     foreach ($mas as $item) {
       $i++;
       $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(0, $i+1, $i);
-      $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(1, $i+1, $item['name']);
-      $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(2, $i+1, $item['price']);
-      $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(3, $i+1, $this->getCountDiscription($item['count']) );
+      $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(1, $i+1, $item['model']);
+      $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(2, $i+1, $item['name']);
+      $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(3, $i+1, $item['price']);
+      $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow(4, $i+1, $this->getCountDiscription($item['count']) );
     }
 
     // If you want to output e.g. a PDF file, simply do:
