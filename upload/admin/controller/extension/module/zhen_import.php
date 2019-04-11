@@ -24,6 +24,7 @@ class ControllerExtensionModuleZhenImport extends Controller {
       $this->response->redirect($this->url->link('extension/extension', 'token=' . $this->session->data['token'] . '&type=module', true));
     }
 
+    $data['token'] = $this->session->data['token'];
     // устанавливаем переменные представления
     $data['heading_title'] = $this->language->get('heading_title');
     // эти переводы уже подгружены Opencart из ru-ru.php:
@@ -44,6 +45,13 @@ class ControllerExtensionModuleZhenImport extends Controller {
     $data['header'] = $this->load->controller('common/header');
     $data['column_left'] = $this->load->controller('common/column_left');
     $data['footer'] = $this->load->controller('common/footer');
+
+    $mas=null;
+    $mas=$this->model_extension_module_zhen_import->get_nofinded();
+    /*response array*/
+    $data['mas'] = $mas;
+    /*send data to view*/
+
     // выводим результат пользователю
     $this->response->setOutput($this->load->view('extension/module/zhen_import.tpl', $data));
   }
@@ -54,7 +62,7 @@ class ControllerExtensionModuleZhenImport extends Controller {
     $this->load->model('extension/module/zhen_import');
 
     //change max_execution_time prolonging time to request
-    set_time_limit(1000);
+    set_time_limit(5000);
     
     chdir( DIR_SYSTEM.'PHPExcel' );
       require_once( 'Classes/PHPExcel.php' );
@@ -98,15 +106,28 @@ class ControllerExtensionModuleZhenImport extends Controller {
     if (isset( $this->request->post['isusd'] ) && ($this->request->post['isusd']!='')) {
       $isusd = true;
     }
-    if (isset( $this->request->post['isprice'] ) && ($this->request->post['isprice']!='')) {
-      $isprice = true;
-    }
-    if (isset( $this->request->post['iscount'] ) && ($this->request->post['iscount']!='')) {
-      $iscount = true;
-    }
+//    if (isset( $this->request->post['isprice'] ) && ($this->request->post['isprice']!='')) {
+//      $isprice = true;
+//    }
+//    if (isset( $this->request->post['iscount'] ) && ($this->request->post['iscount']!='')) {
+//      $iscount = true;
+//    }
     if (isset( $this->request->post['is1c'] ) && ($this->request->post['is1c']!='')) {
       $is1c = true;
     }
+
+    if (isset( $this->request->post['groupUpdate'] ) && ($this->request->post['groupUpdate']!='')) {
+      if($this->request->post['groupUpdate']=='iscount') {
+        $iscount = true;
+        $isprice = true;
+      }
+      else
+        if($this->request->post['groupUpdate']=='isprice'){
+          $iscount = false;
+          $isprice = true;
+        }
+    }
+
     if (isset( $this->request->post['groupRadios'] ) && ($this->request->post['groupRadios']!='')) {
       if($this->request->post['groupRadios']=='r1')
         $filter = true;
@@ -142,6 +163,41 @@ class ControllerExtensionModuleZhenImport extends Controller {
     $mas=$this->model_extension_module_zhen_import->upload($needRow, $setting_arr);
 
     /*response customizing*/
+    // загружаем языковой пакет
+    $this->load->language('extension/module/zhen_import');
+    // устанавливаем заголовок окна
+    $this->document->setTitle($this->language->get('heading_title'));
+    $data['heading_title'] = $this->language->get('heading_title');
+    // добавляем кусочки шаблона в качестве переменных
+    $data['header'] = $this->load->controller('common/header');
+    $data['column_left'] = $this->load->controller('common/column_left');
+    $data['footer'] = $this->load->controller('common/footer');
+    /*response array*/
+    $data['mas'] = $mas;
+    $data['update'] = $this->url->link('extension/module/zhen_import/update', 'token=' . $this->session->data['token'], $this->ssl);
+
+
+    /*send data to view*/
+    $data['token'] = $this->session->data['token'];
+    $this->response->setOutput($this->load->view('extension/module/zhen_can_import.tpl', $data));
+  }
+
+  public function update() {
+    // загружаем модель setting
+    $this->load->model('setting/setting');
+    $this->load->model('extension/module/zhen_import');
+
+    //change max_execution_time prolonging time to request
+    set_time_limit(1000);
+
+    $str_var = $_POST["mas"];
+    $arr = unserialize(base64_decode($str_var));
+
+    /* get result from model method*/
+    $mas=null;
+    $mas=$this->model_extension_module_zhen_import->update($arr);
+
+    /*response customizing*/
     $this->write_log(var_export($mas, true));
     // загружаем языковой пакет
     $this->load->language('extension/module/zhen_import');
@@ -153,11 +209,10 @@ class ControllerExtensionModuleZhenImport extends Controller {
     $data['column_left'] = $this->load->controller('common/column_left');
     $data['footer'] = $this->load->controller('common/footer');
     /*response array*/
-    $data['mas'] = $mas;    
-    /*send data to view*/
+    $data['mas'] = $mas;
     $this->response->setOutput($this->load->view('extension/module/zhen_imported.tpl', $data));
   }
-  
+
   public function download() {
     // загружаем модель setting
     $this->load->model('setting/setting');
@@ -261,6 +316,28 @@ class ControllerExtensionModuleZhenImport extends Controller {
         default:
           return "Наличие уточняйте";
       }   
+  }
+
+  public function ajaxFuncToInsert() {
+      $model = $_POST['name'];
+      // загружаем модель setting
+      $this->load->model('setting/setting');
+      $this->load->model('extension/module/zhen_import');
+
+      $this->model_extension_module_zhen_import->insert_to_table($model);
+  }
+
+  public function ajaxFuncToUpdate() {
+    if (isset($this->request->get['id'])) {
+      $id = (int)$this->request->get['id'];
+      $model = $this->request->get['model'];
+        // загружаем модель setting
+      $this->load->model('setting/setting');
+      $this->load->model('extension/module/zhen_import');
+
+      $this->model_extension_module_zhen_import->update_to_table($id, $model);
+      return "cool";
+    }
   }
 
 }

@@ -21,9 +21,6 @@
         <ul class="nav nav-tabs">
           <li class="active"><a href="#tab-export" data-toggle="tab">Оновленые</a></li>
           <li><a href="#tab-import" data-toggle="tab">Не оновленые</a></li>
-          <li><a href="#tab-finded" data-toggle="tab">Не найденые</a></li>
-          <li><a href="#tab-settings" data-toggle="tab">Не верные данные</a></li>          
-          <li><a href="#tab-empty" data-toggle="tab">С пустыми ячейками</a></li>
         </ul>
 
         <div class="tab-content">
@@ -33,9 +30,9 @@
                   <thead>
                     <tr>
                       <th scope="col">#</th>
-                      <th scope="col">Нозвание</th>
+                      <th scope="col">Название</th>
+                      <th scope="col">Старая цена</th>
                       <th scope="col">Новая цена</th>
-                      <th scope="col">Количество</th>
                     </tr> 
                   </thead>
                   <tbody>
@@ -47,8 +44,8 @@
                       <tr>
                         <th scope="row"><?= $index ?></th>
                         <td><?= $item['name'] ?></td>
-                        <td><?= $item['price'] ?></td>
-                        <td><?= $item['count'] ?></td>
+                        <td><?= $item['old_price'] ?></td>
+                        <td><?= $item['new_price'] ?></td>
                       </tr>                                    
                     <?php
                       } 
@@ -63,21 +60,21 @@
                     <tr>
                       <th scope="col">#</th>
                       <th scope="col">Нозвание</th>
+                      <th scope="col">Старая цена</th>
                       <th scope="col">Новая цена</th>
-                      <th scope="col">Количество</th>
                     </tr>
                   </thead>
                   <tbody>
                     <?php
                       $index=0;
-                      foreach( $mas["skiped"] as $item){
+                      foreach( $mas["noupdated"] as $item){
                         $index++;
                     ?>
                       <tr>
                         <th scope="row"><?= $index ?></th>
                         <td><?= $item['name'] ?></td>
-                        <td><?= $item['price'] ?></td>
-                        <td><?= $item['count'] ?></td>
+                        <td><?= $item['old_price'] ?></td>
+                        <td><?= $item['new_price'] ?></td>
                       </tr>                                    
                     <?php
                       } 
@@ -86,92 +83,6 @@
             </table>
           </div>
 
-          <div class="tab-pane" id="tab-finded">
-            <table class="table">
-                  <thead>
-                    <tr>
-                      <th scope="col">#</th>
-                      <th scope="col">Нозвание</th>
-                      <th scope="col">Новая цена</th>
-                      <th scope="col">Количество</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php
-                      $index=0;
-                      foreach( $mas["nofinded"] as $item){
-                        $index++;
-                    ?>
-                      <tr>
-                        <th scope="row"><?= $index ?></th>
-                        <td><?= $item['name'] ?></td>
-                        <td><?= $item['price'] ?></td>
-                        <td><?= $item['count'] ?></td>
-                      </tr>                                    
-                    <?php
-                      } 
-                    ?>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tab-pane" id="tab-settings">
-            <table class="table">
-                  <thead>
-                    <tr>
-                      <th scope="col">#</th>
-                      <th scope="col">Нозвание</th>
-                      <th scope="col">Новая цена</th>
-                      <th scope="col">Количество</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php
-                      $index=0;
-                      foreach( $mas["wrong_data"] as $item){
-                        $index++;
-                    ?>
-                      <tr>
-                        <th scope="row"><?= $index ?></th>
-                        <td><?= $item['name'] ?></td>
-                        <td><?= $item['price'] ?></td>
-                        <td><?= $item['count'] ?></td>
-                      </tr>                                    
-                    <?php
-                      } 
-                    ?>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tab-pane" id="tab-empty">
-            <table class="table">
-                  <thead>
-                    <tr>
-                      <th scope="col">#</th>
-                      <th scope="col">Нозвание</th>
-                      <th scope="col">Новая цена</th>
-                      <th scope="col">Количество</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php
-                      $index=0;
-                      foreach( $mas["empty_cell"] as $item){
-                        $index++;
-                    ?>
-                      <tr>
-                        <th scope="row"><?= $index ?></th>
-                        <td><?= $item['name'] ?></td>
-                        <td><?= $item['price'] ?></td>
-                        <td><?= $item['count'] ?></td>
-                      </tr>                                    
-                    <?php
-                      } 
-                    ?>
-              </tbody>
-            </table>
-          </div>
 
         </div>
       </div>

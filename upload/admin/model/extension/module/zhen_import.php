@@ -18,45 +18,152 @@ class ModelExtensionModuleZhenImport extends Model{
         return $comments;
     }
 
+    function table_exists($table)
+    {
+        $result =  $this->db->query("SHOW TABLES LIKE '{$table}'");
+        if( $result->num_rows == 1 )
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+        $result->free();
+    }
+
+    function insert_to_table($name)
+    {
+        $str = $name;
+        $charset = mb_detect_encoding($str);
+        $str = iconv($charset, "UTF-8", $str);
+        $name = $str;
+        $result =  $this->db->query("INSERT ignore INTO `" .
+                                     DB_PREFIX .
+                                    "zhen_not_founded`(`importName`, `id`) VALUES ('" .
+                                     $name .
+                                    "' , (select count(x.id)+1 from oc_zhen_not_founded x)   )");
+
+        if($this->db->countAffected()>0)
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+        $result->free();
+    }
+
+    function create_nofinded_table(){
+        $result =
+            $this->db->query("CREATE TABLE " . DB_PREFIX . "zhen_not_founded ( " .
+                "importName varchar(255), " .
+                "existModel varchar(255), " .
+                "id int, " .
+                "PRIMARY KEY (importName) " .
+                ");");
+    }
+
+    public function get_nofinded(){
+        /* create table for not finded elements*/
+        if(!$this->table_exists(DB_PREFIX . "zhen_not_founded"))
+            $this->create_nofinded_table();
+
+        return $this->db->query("select * from `" . DB_PREFIX . "zhen_not_founded`");
+    }
+
+    function update_to_table($id, $model)
+    {
+        $str = $model;
+        $charset = mb_detect_encoding($str);
+        $str = iconv($charset, "UTF-8", $str);
+        $name = $str;
+        $result =  $this->db->query("UPDATE `" .
+            DB_PREFIX .
+            "zhen_not_founded` SET `existModel`='" .
+            $name .
+            "' WHERE `id`=" . $id);
+
+        console.log("in model");
+    }
+
     /*
       Result description:
       0 - is not updated
       1 - is updated row
       2 - not find row with that name
     */
-    public function updatePrice ($name, $price, $default_filter){
-        $name = trim($name);
+    public function updatePrice ($item, $default_filter){
+        if($item["new_price"]==0)
+            return 0;
+
+        $name = preg_replace('/\s+/', '', $item["name"]);
+        $name = mb_strtolower($name, 'UTF-8');
+
         $str = $name;
         $charset = mb_detect_encoding($str);
         $str = iconv($charset, "UTF-8", $str);
-        $str2 = preg_replace('/[^a-zA-Z0-9+\s-,.]/ui', '', $str );
-        // $name = $str2;
-
-        if($price==0)
-            return 0;
+        $name = $str;
+        $name = preg_replace('/"/', '&quot;', $name);
 
         $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
 
-        $this->db->query("SELECT * FROM " . DB_PREFIX . "product  WHERE " .
-            DB_PREFIX . "product.product_id  IN ( SELECT product_id FROM " . DB_PREFIX . "product_description  WHERE name like '" . $filter . "')");
-        if($this->db->countAffected()==0)
-            return 2;
+        //try get one element
+        $query = "SELECT * FROM " . DB_PREFIX . "product  WHERE " .
+            DB_PREFIX . "product.product_id = " .
+            " (select distinct product_id " .
+            " from ( SELECT  REPLACE(LOWER(TRIM(sku)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "product WHERE sku <>  '') tempTable " .
+            " where convertString like '" . $filter . "')";
 
-        $this->db->query("UPDATE " . DB_PREFIX . "product SET price = '".$price."' WHERE " .
-            DB_PREFIX . "product.product_id  IN ( SELECT product_id FROM " . DB_PREFIX . "product_description  WHERE name like '" . $filter . "')");
-        if($this->db->countAffected()!=0)
-            return 1;
+        $res = $this->db->query($query);
 
-        return 0;
+        if($this->db->countAffected()==0) {
+            //if not find element by name, trying find by model number
+            $query = "SELECT p.* FROM " . DB_PREFIX . "product p  WHERE " .
+                "p.model = " .
+                " (select distinct existModel " .
+                " from ( SELECT  REPLACE(LOWER(TRIM(importName)), ' ', '') as convertString, existModel FROM " . DB_PREFIX . "zhen_not_founded WHERE importName <>  '') tempTable " .
+                " where convertString like '" . $filter . "')";
+
+            $res = $this->db->query($query);
+
+            if($this->db->countAffected()==0)
+                return 7;
+            else {
+                //try updated element
+                $this->db->query("UPDATE " . DB_PREFIX . "product SET price = '" . $item["new_price"] . "' WHERE " .
+                    DB_PREFIX . "product.model = " .
+                    " (select distinct existModel " .
+                    " from ( SELECT  REPLACE(LOWER(TRIM(importName)), ' ', '') as convertString, existModel FROM " . DB_PREFIX . "zhen_not_founded WHERE importName <>  '') tempTable " .
+                    " where convertString like '" . $filter . "')"
+                );
+
+                if($this->db->countAffected()!=0)
+                    return 8;
+                else
+                    return 9;
+            }
+        }
+        else {
+            //try updated element
+            $this->db->query("UPDATE " . DB_PREFIX . "product SET price = '" . $item["new_price"] . "' WHERE " .
+                DB_PREFIX . "product.product_id = " .
+                " (select distinct product_id " .
+                " from ( SELECT  REPLACE(LOWER(TRIM(sku)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "product WHERE sku <>  '') tempTable " .
+                " where convertString like '" . $filter . "')");
+
+            if($this->db->countAffected()!=0)
+                return 8;
+            else
+                return 9;
+        }
+
     }
 
-
-    public function updatePriceNew ($name, $price, $default_filter){
-        //$name = trim($name);
-        // $name = preg_replace('/\d\sшт\W/', '', $name);
-        // $name = preg_replace('/\dшт\W/', '', $name);
-        // $name = preg_replace('/\s+/', '', $name);
-
+    public function tryUpdatePrice ($name, $price, $default_filter){
+        if($price==0)
+            return 0;
 
         $name = preg_replace('/\s+/', '', $name);
         $name = mb_strtolower($name, 'UTF-8');
@@ -66,38 +173,13 @@ class ModelExtensionModuleZhenImport extends Model{
         $str = iconv($charset, "UTF-8", $str);
         $name = $str;
         $name = preg_replace('/"/', '&quot;', $name);
-        // $str2 = preg_replace('/[^a-zA-Z0-9+\s-,."]/ui', '', $str );
 
-        // $name = preg_replace('/gps/', '', $name);
-        // $name = preg_replace('/led/', '', $name);
-        // $name = preg_replace('/"/', '&quot;', $name);
-
-
-
-        //mysql remove spaces and convert to lowercase
-
-        // select product_id
-        // from ( SELECT REPLACE(LOWER(TRIM(name)), ' ', '') as convertString, product_id FROM `oc_product_description` ) tempTable
-        // where convertString like '%kicxkap%'
-
-
-        if($price==0)
-            return 0;
-
-        // $filter = $default_filter == true ? "%" . $name : "%" . $name  . "%" ;
         $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
 
-// var_dump($name);
-
         //if dublicate is exist then return 0
-        // $this->db->query("select distinct product_id " .
-        //   " from ( SELECT REPLACE(REPLACE(REPLACE(LOWER(TRIM(name)), ' ', ''), '(', ''), ')', '') as convertString, product_id FROM " . DB_PREFIX . "product_description ) tempTable " .
-        //   " where convertString like '" . $filter . "'");
-
         $this->db->query("select distinct product_id " .
             " from ( SELECT REPLACE(LOWER(TRIM(sku)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "product WHERE sku <>  '') tempTable " .
             " where convertString like '" . $filter . "'");
-
 
         if($this->db->countAffected()>1)
             return 0;
@@ -109,114 +191,39 @@ class ModelExtensionModuleZhenImport extends Model{
             " from ( SELECT  REPLACE(LOWER(TRIM(sku)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "product WHERE sku <>  '') tempTable " .
             " where convertString like '" . $filter . "')";
 
-        $this->db->query($query);
+        $res = $this->db->query($query);
 
-        if($this->db->countAffected()==0)
-            return 2;
+        if($this->db->countAffected()==0) {
+            //if not find element by name, trying find by model number
+            $query = "SELECT p.* FROM " . DB_PREFIX . "product p  WHERE " .
+                "p.model = " .
+                " (select distinct existModel " .
+                " from ( SELECT  REPLACE(LOWER(TRIM(importName)), ' ', '') as convertString, existModel FROM " . DB_PREFIX . "zhen_not_founded WHERE importName <>  '') tempTable " .
+                " where convertString like '" . $filter . "')";
 
-        //try updated element
-        $this->db->query("UPDATE " . DB_PREFIX . "product SET price = '".$price."' WHERE " .
-            DB_PREFIX . "product.product_id = " .
-            " (select distinct product_id " .
-            " from ( SELECT  REPLACE(LOWER(TRIM(sku)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "product WHERE sku <>  '') tempTable " .
-            " where convertString like '" . $filter . "')");
-        if($this->db->countAffected()!=0)
-            return 1;
+                //            SELECT p.*
+                //FROM `oc_product` p
+                //Where p.model =
+                //                (select distinct existModel
+                // from
+                // ( SELECT  REPLACE(LOWER(TRIM(importName)), ' ', '') as convertString, existModel
+                //      FROM  `oc_zhen_not_founded`
+                //      WHERE importName <>  '') tempTable
+                //      where convertString like '%2-проводный электропривод 12В SL-2')
 
-        return 0;
-    }
+                $res = $this->db->query($query);
 
-    /*
-      quantity id description:
-        1 - present product
-        2 - present product(2-3 day)
-        3 - absent product
-        100 - need specify
-    */
-    public function updateCount ($name, $count, $default_filter){
-        $name = trim($name);
-        // var_dump($name);
-        $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
-
-        $this->db->query("SELECT * FROM " . DB_PREFIX . "product  WHERE " .
-            DB_PREFIX . "product.product_id  IN ( SELECT product_id FROM " . DB_PREFIX . "product_description  WHERE name like '" . $filter . "')");
-        if($this->db->countAffected()==0)
-            return 2;
-        //if( strpos( $haystack, $needle ) !== false)
-        $data = 100;
-        if(    (strpos( $count, "-" ) !== false)
-            || (strpos( $count, "Нет" ) !== false)
-            || (strpos( $count, "нет" ) !== false)
-            || (strpos( $count, "НЕТ" ) !== false)
-        )
-            $data = 3; // is absent
-        else
-            $data = 1;// is present
-
-        $this->db->query("UPDATE " . DB_PREFIX . "product SET quantity = '".$data."' WHERE " .
-            DB_PREFIX . "product.product_id  IN ( SELECT product_id FROM " . DB_PREFIX . "product_description  WHERE name like '" . $filter . "')");
-        if($this->db->countAffected()!=0)
-            return 1;
-
-        return 0;
-    }
-
-    public function updateCount1C ($name, $count, $default_filter){
-        $name = trim($name);
-
-        $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
-
-        $select = $this->db->query("SELECT * FROM " . DB_PREFIX . "product  WHERE " .
-            DB_PREFIX . "product.product_id  IN ( SELECT product_id FROM " . DB_PREFIX . "product_description  WHERE name like '" . $filter . "')");
-        if($this->db->countAffected()==0)
-            return 2;
-        //if( strpos( $haystack, $needle ) !== false)
-        $data = 100;
-        if(    (strpos( $count, "-" ) !== false)
-            || (strpos( $count, "Нет" ) !== false)
-            || (strpos( $count, "нет" ) !== false)
-            || (strpos( $count, "НЕТ" ) !== false)
-            || ( $count == "0" )
-        )
-            $data = 3; // is absent
-        else
-            $data = 1;// is present
-
-        $quantity = 0;
-        foreach ($select->rows as $result) {
-            $quantity = $result['quantity'];
+                if($this->db->countAffected()==0)
+                    return 2;
+                else {
+//                    var_dump($res);
+                    /*get price from element*/
+                    return floatval($res->rows[0]["price"]);
+                }
         }
-        if ( $quantity==1 && $data == 3)
-            $data = 2; // 2-3 days
-
-        $this->db->query("UPDATE " . DB_PREFIX . "product SET quantity = '".$data."' WHERE " .
-            DB_PREFIX . "product.product_id  IN ( SELECT product_id FROM " . DB_PREFIX . "product_description  WHERE name like '" . $filter . "')");
-        if($this->db->countAffected()!=0)
-            return 1;
-
-        return 0;
-    }
-
-    public function updatePriceAndCount ($name, $price, $count, $default_filter){
-        $p = $this->updatePrice($name, $price, $default_filter);
-        $c = $this->updateCount($name, $count, $default_filter);
-
-        switch ($p + $c) {
-            case 1:
-                return 1;
-                break;
-            case 2:
-                return 1;
-                break;
-            case 3:
-                return 1;
-                break;
-            case 4:
-                return 2;
-                break;
-            default:
-                return 0;
-                break;
+        else {
+            /*get price from element*/
+            return floatval($res->rows[0]["price"]);
         }
     }
 
@@ -234,23 +241,10 @@ class ModelExtensionModuleZhenImport extends Model{
     }
 
     public function check($row, $func){
-        switch($func){
-            case 1:
-                if(isset($row['name']) && isset($row['price']) && isset($row['count']))
-                    return true;
-                break;
-            case 2:
-                if(isset($row['name']) && isset($row['price']))
-                    return true;
-                break;
-            case 3:
-                if(isset($row['name']) && isset($row['count']))
-                    return true;
-                break;
-            default:
-                return true;
-        }
-        return false;
+        if(isset($row['name']) && isset($row['old_price']))
+            return true;
+        else
+            return false;
     }
 
     public function upload($arr, $setting) {
@@ -259,13 +253,18 @@ class ModelExtensionModuleZhenImport extends Model{
         $mas["skiped"] = [];
         $mas["wrong_data"] = [];
         $mas["updated"] = [];
+        $mas["finded"] = [];
         $mas["nofinded"] = [];
         $mas["empty_cell"] = [];
+
+        /* create table for not finded elements*/
+        if(!$this->table_exists(DB_PREFIX . "zhen_not_founded"))
+           $this->create_nofinded_table();
+
+
         /* get needed update attribute */
         $func = 0;
-        if($setting['usePrice'] == true && $setting['useCount'] == true)
-            $func = 1;
-        else
+
             if($setting['usePrice'] == true && $setting['useCount'] == false)
                 $func = 2;
             else
@@ -274,20 +273,15 @@ class ModelExtensionModuleZhenImport extends Model{
 
         /* get all rows from input array(from file)*/
         foreach($arr as $item){ // $index = current($arr);
-            $row = ['name' => $item[0], 'price' => $item[1], 'count' => $item[2] ];
+            $row = ['name' => $item[0], 'old_price' => $item[1]/$setting['USD'], 'new_price' => $item[1]/$setting['USD'] ];
+
             if( $this->check($row, $func) ){ //if set name and price and count
                 $res = -1;
                 /* select wanted action */
                 switch($func){
-                    case 1:
-                        if(is_numeric($item[1]))
-                            $res = $this->updatePriceAndCount( "|" . $item[0] . "|", $item[1]/$setting['USD'], $item[2], $setting['useDefaultSearch'] );
-                        else
-                            array_push($mas["wrong_data"], $row);
-                        break;
                     case 2:
                         if(is_numeric($item[1]))
-                            $res = $this->updatePriceNew( $item[0], $item[1]/$setting['USD'], $setting['useDefaultSearch'] );
+                            $res = $this->tryUpdatePrice( $item[0], $item[1]/$setting['USD'], $setting['useDefaultSearch'] );
                         else
                             array_push($mas["wrong_data"], $row);
                         break;
@@ -301,6 +295,9 @@ class ModelExtensionModuleZhenImport extends Model{
 
                 /*push at log_arr for result*/
                 switch($res){
+                    case -1:
+                        array_push($mas["empty_cell"], $row);
+                        break;
                     case 0:
                         array_push($mas["skiped"], $row);
                         break;
@@ -309,15 +306,57 @@ class ModelExtensionModuleZhenImport extends Model{
                         break;
                     case 2:
                         array_push($mas["nofinded"], $row);
+//                        $this->insert_to_table($row['name']);
                         break;
-                    default:
-                        array_push($mas["empty_cell"], $row);
+                    default: {
+                        $row['old_price'] = $res;
+//                        var_dump($res);
+                        if ($row['old_price'] == $row['new_price'])
+                            array_push($mas["skiped"], $row);
+                        else
+                            array_push($mas["finded"], $row);
+                    }
                 }
             }
             else
                 array_push($mas["empty_cell"], $row);
         }
 
+        return $mas;
+    }
+
+    public function update($arr) {
+        /* result array */
+        $mas = [];
+        $mas["updated"] = [];
+        $mas["noupdated"] = [];
+        $mas["wrong_data"] = [];
+        $mas["finded"] = $arr["finded"];
+
+        foreach($mas["finded"] as $item) {
+//            $tmp = $item["new_price"];
+//            $item["new_price"] = $item["old_price"];
+//            $item["old_price"] = $tmp;
+
+            if(is_numeric($item["new_price"]))
+                $res = $this->updatePrice( $item, true );//TODO changeble filter value
+            else
+                array_push($mas["wrong_data"], $item);
+
+
+            switch($res){
+                case 9:
+                    array_push($mas["noupdated"], $item);
+                    break;
+                case 8:
+                    array_push($mas["updated"], $item);
+                    break;
+                default: {
+                    array_push($mas["wrong_data"], $item);
+                }
+            }
+        }
+//        var_dump($mas);
         return $mas;
     }
 
