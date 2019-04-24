@@ -36,7 +36,7 @@ class ControllerExtensionModuleZhenImport extends Controller {
    
     $data['usd'] = 25;    
 
-    $data['import'] = $this->url->link('extension/module/zhen_import/upload', 'token=' . $this->session->data['token'], $this->ssl);
+    $data['import'] = $this->url->link('extension/module/zhen_import/upload', 'token=' . $this->session->data['token'], 'NONSSL'/*$this->ssl*/); //no ssl - because on site was redirect, and has error with upload file
     $data['export'] = $this->url->link('extension/module/zhen_import/download', 'token=' . $this->session->data['token'], $this->ssl);
 
     $data['post_max_size'] = $this->return_bytes( ini_get('post_max_size') );
@@ -63,10 +63,18 @@ class ControllerExtensionModuleZhenImport extends Controller {
 
     //change max_execution_time prolonging time to request
     set_time_limit(5000);
-    
+
+    $inputFileName ="";
+    if(is_uploaded_file($this->request->files['upload']['tmp_name']))
+      $inputFileName = $this->request->files['upload']['tmp_name'];
+    else{
+      var_dump($this->request);
+    }
+
     chdir( DIR_SYSTEM.'PHPExcel' );
       require_once( 'Classes/PHPExcel.php' );
-    $inputFileName = $this->request->files['upload']['tmp_name'];
+//    $inputFileName = $this->request->files['upload']['tmp_name'];
+
     //  Read your Excel workbook
     try {
         $inputFileType = PHPExcel_IOFactory::identify($inputFileName);
@@ -174,7 +182,7 @@ class ControllerExtensionModuleZhenImport extends Controller {
     $data['footer'] = $this->load->controller('common/footer');
     /*response array*/
     $data['mas'] = $mas;
-    $data['update'] = $this->url->link('extension/module/zhen_import/update', 'token=' . $this->session->data['token'], $this->ssl);
+    $data['update'] = $this->url->link('extension/module/zhen_import/update', 'token=' . $this->session->data['token'], 'NONSSL');
 
 
     /*send data to view*/
@@ -188,8 +196,8 @@ class ControllerExtensionModuleZhenImport extends Controller {
     $this->load->model('extension/module/zhen_import');
 
     //change max_execution_time prolonging time to request
-    set_time_limit(1000);
-
+    set_time_limit(5000);
+//var_dump($_POST);
     $str_var = $_POST["mas"];
     $arr = unserialize(base64_decode($str_var));
 

@@ -273,7 +273,8 @@ class ModelExtensionModuleZhenImport extends Model{
 
         /* get all rows from input array(from file)*/
         foreach($arr as $item){ // $index = current($arr);
-            $row = ['name' => $item[0], 'old_price' => $item[1]/$setting['USD'], 'new_price' => $item[1]/$setting['USD'] ];
+            $usd = floatval($item[1])/$setting['USD'];
+            $row = ['name' => $item[0], 'old_price' => $usd, 'new_price' => $usd ];
 
             if( $this->check($row, $func) ){ //if set name and price and count
                 $res = -1;
