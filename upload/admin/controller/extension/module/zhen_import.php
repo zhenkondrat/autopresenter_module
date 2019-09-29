@@ -114,12 +114,7 @@ class ControllerExtensionModuleZhenImport extends Controller {
     if (isset( $this->request->post['isusd'] ) && ($this->request->post['isusd']!='')) {
       $isusd = true;
     }
-//    if (isset( $this->request->post['isprice'] ) && ($this->request->post['isprice']!='')) {
-//      $isprice = true;
-//    }
-//    if (isset( $this->request->post['iscount'] ) && ($this->request->post['iscount']!='')) {
-//      $iscount = true;
-//    }
+
     if (isset( $this->request->post['is1c'] ) && ($this->request->post['is1c']!='')) {
       $is1c = true;
     }
@@ -127,7 +122,7 @@ class ControllerExtensionModuleZhenImport extends Controller {
     if (isset( $this->request->post['groupUpdate'] ) && ($this->request->post['groupUpdate']!='')) {
       if($this->request->post['groupUpdate']=='iscount') {
         $iscount = true;
-        $isprice = true;
+        $isprice = false;
       }
       else
         if($this->request->post['groupUpdate']=='isprice'){
@@ -180,14 +175,20 @@ class ControllerExtensionModuleZhenImport extends Controller {
     $data['header'] = $this->load->controller('common/header');
     $data['column_left'] = $this->load->controller('common/column_left');
     $data['footer'] = $this->load->controller('common/footer');
-    /*response array*/
-    $data['mas'] = $mas;
-    $data['update'] = $this->url->link('extension/module/zhen_import/update', 'token=' . $this->session->data['token'], 'NONSSL');
+    /*response array   [0]-price or count, [1]-data*/
+    $data['mas'] = $mas[1];
 
+    if($mas[0]==2)
+      $data['update'] = $this->url->link('extension/module/zhen_import/update', 'token=' . $this->session->data['token'], 'NONSSL');
+    else
+      $data['update'] = $this->url->link('extension/module/zhen_import/update_count', 'token=' . $this->session->data['token'], 'NONSSL');
 
     /*send data to view*/
     $data['token'] = $this->session->data['token'];
-    $this->response->setOutput($this->load->view('extension/module/zhen_can_import.tpl', $data));
+    if($mas[0]==2)
+      $this->response->setOutput($this->load->view('extension/module/zhen_can_import.tpl', $data));
+    else
+      $this->response->setOutput($this->load->view('extension/module/zhen_can_import_count.tpl', $data));
   }
 
   public function update() {
@@ -197,7 +198,6 @@ class ControllerExtensionModuleZhenImport extends Controller {
 
     //change max_execution_time prolonging time to request
     set_time_limit(5000);
-//var_dump($_POST);
     $str_var = $_POST["mas"];
     $arr = unserialize(base64_decode($str_var));
 
@@ -220,6 +220,40 @@ class ControllerExtensionModuleZhenImport extends Controller {
     $data['mas'] = $mas;
     $this->response->setOutput($this->load->view('extension/module/zhen_imported.tpl', $data));
   }
+
+  public function update_count() {
+    // загружаем модель setting
+    $this->load->model('setting/setting');
+    $this->load->model('extension/module/zhen_import');
+
+    //change max_execution_time prolonging time to request
+    set_time_limit(5000);
+    $str_var = $_POST["mas"];
+    $arr = unserialize(base64_decode($str_var));
+
+    /* get result from model method*/
+    $mas=null;
+    $mas=$this->model_extension_module_zhen_import->update_count($arr);
+
+    /*response customizing*/
+    $this->write_log(var_export($mas, true));
+    // загружаем языковой пакет
+    $this->load->language('extension/module/zhen_import');
+    // устанавливаем заголовок окна
+    $this->document->setTitle($this->language->get('heading_title'));
+    $data['heading_title'] = $this->language->get('heading_title');
+    // добавляем кусочки шаблона в качестве переменных
+    $data['header'] = $this->load->controller('common/header');
+    $data['column_left'] = $this->load->controller('common/column_left');
+    $data['footer'] = $this->load->controller('common/footer');
+    /*response array*/
+    $data['mas'] = $mas[1];
+    if($mas[0]==2)
+      $this->response->setOutput($this->load->view('extension/module/zhen_imported.tpl', $data));
+    else
+      $this->response->setOutput($this->load->view('extension/module/zhen_imported_count.tpl', $data));
+  }
+
 
   public function download() {
     // загружаем модель setting

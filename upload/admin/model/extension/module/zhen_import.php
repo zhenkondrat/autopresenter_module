@@ -216,7 +216,6 @@ class ModelExtensionModuleZhenImport extends Model{
                 if($this->db->countAffected()==0)
                     return 2;
                 else {
-//                    var_dump($res);
                     /*get price from element*/
                     return floatval($res->rows[0]["price"]);
                 }
@@ -225,6 +224,210 @@ class ModelExtensionModuleZhenImport extends Model{
             /*get price from element*/
             return floatval($res->rows[0]["price"]);
         }
+    }
+
+    /*
+        quantity id description:
+         1 - present product
+         2 - present product(2-3 day)
+         3 - absent product
+         100 - need specify
+     */
+    public function tryUpdateCount($name, $count, $default_filter){
+        if($count=="" || $count==null)
+            return 0;
+        $name = preg_replace('/\s+/', '', $name);
+        $name = mb_strtolower($name, 'UTF-8');
+
+        $str = $name;
+        $charset = mb_detect_encoding($str);
+        $str = iconv($charset, "UTF-8", $str);
+        $name = $str;
+        $name = preg_replace('/"/', '&quot;', $name);
+
+        $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
+
+        //if dublicate is exist then return 0
+        $this->db->query("select distinct product_id " .
+            " from ( SELECT REPLACE(LOWER(TRIM(sku)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "product WHERE sku <>  '') tempTable " .
+            " where convertString like '" . $filter . "'");
+
+        if($this->db->countAffected()>1)
+            return 0;
+
+        //try get one element
+        $query = "SELECT * FROM " . DB_PREFIX . "product  WHERE " .
+            DB_PREFIX . "product.product_id = " .
+            " (select distinct product_id " .
+            " from ( SELECT  REPLACE(LOWER(TRIM(sku)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "product WHERE sku <>  '') tempTable " .
+            " where convertString like '" . $filter . "')";
+
+        $res = $this->db->query($query);
+
+        if($this->db->countAffected()==0) {
+            //if not find element by name, trying find by model number
+            $query = "SELECT p.* FROM " . DB_PREFIX . "product p  WHERE " .
+                "p.model = " .
+                " (select distinct existModel " .
+                " from ( SELECT  REPLACE(LOWER(TRIM(importName)), ' ', '') as convertString, existModel FROM " . DB_PREFIX . "zhen_not_founded WHERE importName <>  '') tempTable " .
+                " where convertString like '" . $filter . "')";
+
+            $res = $this->db->query($query);
+
+            if($this->db->countAffected()==0)
+                return 2;
+            else {
+                if(    (strpos( $count, "-" ) !== false)
+                    || (strpos( $count, "Нет" ) !== false)
+                    || (strpos( $count, "нет" ) !== false)
+                    || (strpos( $count, "НЕТ" ) !== false)
+                    || (strpos( $count, "N" ) !== false)
+                    || (strpos( $count, "n" ) !== false)
+                )
+                    return 3*10; // is absent
+                else
+                    return 1*10;// is present
+            }
+        }
+        else {
+            if(    (strpos( $count, "-" ) !== false)
+                || (strpos( $count, "Нет" ) !== false)
+                || (strpos( $count, "нет" ) !== false)
+                || (strpos( $count, "НЕТ" ) !== false)
+                || (strpos( $count, "N" ) !== false)
+                || (strpos( $count, "n" ) !== false)
+            )
+                return 3*10; // is absent
+            else
+                return 1*10;// is present
+        }
+    }
+
+    /*
+  Result description:
+  0 - is not updated
+  1 - is updated row
+  2 - not find row with that name
+*/
+    public function updateCount ($item, $default_filter){
+        if($item["new_count"]==-1)
+            return 0;
+
+        $name = preg_replace('/\s+/', '', $item["name"]);
+        $name = mb_strtolower($name, 'UTF-8');
+
+        $str = $name;
+        $charset = mb_detect_encoding($str);
+        $str = iconv($charset, "UTF-8", $str);
+        $name = $str;
+        $name = preg_replace('/"/', '&quot;', $name);
+
+        $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
+
+        //try get one element
+        $query = "SELECT * FROM " . DB_PREFIX . "product  WHERE " .
+            DB_PREFIX . "product.product_id = " .
+            " (select distinct product_id " .
+            " from ( SELECT  REPLACE(LOWER(TRIM(sku)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "product WHERE sku <>  '') tempTable " .
+            " where convertString like '" . $filter . "')";
+
+        $res = $this->db->query($query);
+
+        if($this->db->countAffected()==0) {
+            //if not find element by name, trying find by model number
+            $query = "SELECT p.* FROM " . DB_PREFIX . "product p  WHERE " .
+                "p.model = " .
+                " (select distinct existModel " .
+                " from ( SELECT  REPLACE(LOWER(TRIM(importName)), ' ', '') as convertString, existModel FROM " . DB_PREFIX . "zhen_not_founded WHERE importName <>  '') tempTable " .
+                " where convertString like '" . $filter . "')";
+
+            $res = $this->db->query($query);
+
+            if($this->db->countAffected()==0)
+                return 7;
+            else {
+                //try updated element
+                $this->db->query("UPDATE " . DB_PREFIX . "product SET quantity = '". $item["new_count"] ."' WHERE " .
+                    DB_PREFIX . "product.model = " .
+                    " (select distinct existModel " .
+                    " from ( SELECT  REPLACE(LOWER(TRIM(importName)), ' ', '') as convertString, existModel FROM " . DB_PREFIX . "zhen_not_founded WHERE importName <>  '') tempTable " .
+                    " where convertString like '" . $filter . "')"
+                );
+
+                if($this->db->countAffected()!=0)
+                    return 8;
+                else
+                    return 9;
+            }
+        }
+        else {
+            //try updated element
+            $this->db->query("UPDATE " . DB_PREFIX . "product SET quantity = '". $item["new_count"] ."' WHERE " .
+                DB_PREFIX . "product.product_id = " .
+                " (select distinct product_id " .
+                " from ( SELECT  REPLACE(LOWER(TRIM(sku)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "product WHERE sku <>  '') tempTable " .
+                " where convertString like '" . $filter . "')");
+
+            if($this->db->countAffected()!=0)
+                return 8;
+            else
+                return 9;
+        }
+
+    }
+
+    public function tryUpdateCount1C ($name, $count, $default_filter){
+        $name = preg_replace('/\s+/', '', $name);
+        $name = mb_strtolower($name, 'UTF-8');
+
+        $str = $name;
+        $charset = mb_detect_encoding($str);
+        $str = iconv($charset, "UTF-8", $str);
+        $name = $str;
+        $name = preg_replace('/"/', '&quot;', $name);
+
+        $filter = $default_filter == true ? "%" . $this->parse_name($name) : "%" . $this->parse_name($name)  . "%" ;
+
+        //if dublicate is exist then return 0
+        $this->db->query("select distinct product_id " .
+            " from ( SELECT REPLACE(LOWER(TRIM(sku)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "product WHERE sku <>  '') tempTable " .
+            " where convertString like '" . $filter . "'");
+
+        if($this->db->countAffected()>1)
+            return 0;
+
+
+        $select = $this->db->query("SELECT * FROM " . DB_PREFIX . "product  WHERE " .
+            DB_PREFIX . "product.product_id  IN ( SELECT product_id FROM " . DB_PREFIX . "product_description  WHERE name like '" . $filter . "')");
+        if($this->db->countAffected()==0)
+            return 2;
+        //if( strpos( $haystack, $needle ) !== false)
+        $data = 100;
+        if(    (strpos( $count, "-" ) !== false)
+            || (strpos( $count, "Нет" ) !== false)
+            || (strpos( $count, "нет" ) !== false)
+            || (strpos( $count, "НЕТ" ) !== false)
+            || (strpos( $count, "N" ) !== false)
+            || (strpos( $count, "n" ) !== false)
+            || ( $count == "0" )
+        )
+            $data = 3; // is absent
+        else
+            $data = 1;// is present
+
+        $quantity = 0;
+        foreach ($select->rows as $result) {
+            $quantity = $result['quantity'];
+        }
+        if ( $quantity==1 && $data == 3)
+            $data = 2; // 2-3 days
+
+        $this->db->query("UPDATE " . DB_PREFIX . "product SET quantity = '".$data."' WHERE " .
+            DB_PREFIX . "product.product_id  IN ( SELECT product_id FROM " . DB_PREFIX . "product_description  WHERE name like '" . $filter . "')");
+        if($this->db->countAffected()!=0)
+            return 1;
+
+        return 0;
     }
 
     public function parse_name($name){
@@ -241,7 +444,7 @@ class ModelExtensionModuleZhenImport extends Model{
     }
 
     public function check($row, $func){
-        if(isset($row['name']) && isset($row['old_price']))
+        if(isset($row['name']) && (isset($row['old_price']) || isset($row['old_count'])))
             return true;
         else
             return false;
@@ -272,9 +475,13 @@ class ModelExtensionModuleZhenImport extends Model{
                     $func = 3;
 
         /* get all rows from input array(from file)*/
-        foreach($arr as $item){ // $index = current($arr);
+        foreach($arr as $item){ // [0]-name, [1] - price, [2] - count
             $usd = floatval($item[1])/$setting['USD'];
-            $row = ['name' => $item[0], 'old_price' => $usd, 'new_price' => $usd ];
+            $row = null;
+            if ($func==2)
+                $row = ['name' => $item[0], 'old_price' => $usd, 'new_price' => $usd ];
+            elseif ($func==3)
+                $row = ['name' => $item[0], 'old_count' => -1, 'new_count' => -1 ];
 
             if( $this->check($row, $func) ){ //if set name and price and count
                 $res = -1;
@@ -282,18 +489,17 @@ class ModelExtensionModuleZhenImport extends Model{
                 switch($func){
                     case 2:
                         if(is_numeric($item[1]))
-                            $res = $this->tryUpdatePrice( $item[0], $item[1]/$setting['USD'], $setting['useDefaultSearch'] );
+                            $res = $this->tryUpdatePrice( $item[0], $usd, $setting['useDefaultSearch'] );
                         else
                             array_push($mas["wrong_data"], $row);
                         break;
                     case 3:
                         if( $setting['update1C'] == true )
-                            $res = $this->updateCount1C( $item[0], $item[2], $setting['useDefaultSearch'] );
+                            $res = $this->tryUpdateCount1C( $item[0], $item[2], $setting['useDefaultSearch'] );
                         else
-                            $res = $this->updateCount( $item[0], $item[2], $setting['useDefaultSearch'] );
+                            $res = $this->tryUpdateCount( $item[0], $item[2], $setting['useDefaultSearch'] );
                         break;
                 }
-
                 /*push at log_arr for result*/
                 switch($res){
                     case -1:
@@ -310,20 +516,24 @@ class ModelExtensionModuleZhenImport extends Model{
 //                        $this->insert_to_table($row['name']);
                         break;
                     default: {
-                        $row['old_price'] = $res;
-//                        var_dump($res);
-                        if ($row['old_price'] == $row['new_price'])
-                            array_push($mas["skiped"], $row);
-                        else
+                        if ($func==2) {
+                            $row['old_price'] = $res;
+                            if ($row['old_price'] == $row['new_price'])
+                                array_push($mas["skiped"], $row);
+                            else
+                                array_push($mas["finded"], $row);
+                        }
+                        else{
+                            $row['new_count'] = $res / 10;
                             array_push($mas["finded"], $row);
+                        }
                     }
                 }
             }
             else
                 array_push($mas["empty_cell"], $row);
         }
-
-        return $mas;
+        return [$func, $mas];
     }
 
     public function update($arr) {
@@ -335,15 +545,10 @@ class ModelExtensionModuleZhenImport extends Model{
         $mas["finded"] = $arr["finded"];
 
         foreach($mas["finded"] as $item) {
-//            $tmp = $item["new_price"];
-//            $item["new_price"] = $item["old_price"];
-//            $item["old_price"] = $tmp;
-
             if(is_numeric($item["new_price"]))
                 $res = $this->updatePrice( $item, true );//TODO changeble filter value
             else
                 array_push($mas["wrong_data"], $item);
-
 
             switch($res){
                 case 9:
@@ -357,8 +562,37 @@ class ModelExtensionModuleZhenImport extends Model{
                 }
             }
         }
-//        var_dump($mas);
-        return $mas;
+        return [2, $mas];
+    }
+
+    public function update_count($arr) {
+        /* result array */
+        $mas = [];
+        $mas["updated"] = [];
+        $mas["noupdated"] = [];
+        $mas["wrong_data"] = [];
+        $mas["finded"] = $arr["finded"];
+
+        foreach($mas["finded"] as $item) {
+            if(is_numeric($item["new_count"]))
+                $res = $this->updateCount( $item, true );//TODO changeble filter value
+            else
+                array_push($mas["wrong_data"], $item);
+
+            switch($res){
+                case 9:
+                    array_push($mas["noupdated"], $item);
+                    break;
+                case 8:
+                    array_push($mas["updated"], $item);
+                    break;
+                default: {
+                    array_push($mas["wrong_data"], $item);
+                }
+            }
+        }
+
+        return [3, $mas];
     }
 
     public function download(){
