@@ -377,6 +377,8 @@ class ModelExtensionModuleZhenImport extends Model{
     }
 
     public function tryUpdateCount1C ($name, $count, $default_filter){
+        if($count=="" || $count==null)
+            return 0;
         $name = preg_replace('/\s+/', '', $name);
         $name = mb_strtolower($name, 'UTF-8');
 
@@ -396,38 +398,72 @@ class ModelExtensionModuleZhenImport extends Model{
         if($this->db->countAffected()>1)
             return 0;
 
+        //try get one element
+        $query = "SELECT * FROM " . DB_PREFIX . "product  WHERE " .
+            DB_PREFIX . "product.product_id = " .
+            " (select distinct product_id " .
+            " from ( SELECT  REPLACE(LOWER(TRIM(sku)), ' ', '') as convertString, product_id FROM " . DB_PREFIX . "product WHERE sku <>  '') tempTable " .
+            " where convertString like '" . $filter . "')";
 
-        $select = $this->db->query("SELECT * FROM " . DB_PREFIX . "product  WHERE " .
-            DB_PREFIX . "product.product_id  IN ( SELECT product_id FROM " . DB_PREFIX . "product_description  WHERE name like '" . $filter . "')");
-        if($this->db->countAffected()==0)
-            return 2;
-        //if( strpos( $haystack, $needle ) !== false)
-        $data = 100;
-        if(    (strpos( $count, "-" ) !== false)
-            || (strpos( $count, "Нет" ) !== false)
-            || (strpos( $count, "нет" ) !== false)
-            || (strpos( $count, "НЕТ" ) !== false)
-            || (strpos( $count, "N" ) !== false)
-            || (strpos( $count, "n" ) !== false)
-            || ( $count == "0" )
-        )
-            $data = 3; // is absent
-        else
-            $data = 1;// is present
+        $res = $this->db->query($query);
 
-        $quantity = 0;
-        foreach ($select->rows as $result) {
-            $quantity = $result['quantity'];
+        if($this->db->countAffected()==0) {
+            //if not find element by name, trying find by model number
+            $query = "SELECT p.* FROM " . DB_PREFIX . "product p  WHERE " .
+                "p.model = " .
+                " (select distinct existModel " .
+                " from ( SELECT  REPLACE(LOWER(TRIM(importName)), ' ', '') as convertString, existModel FROM " . DB_PREFIX . "zhen_not_founded WHERE importName <>  '') tempTable " .
+                " where convertString like '" . $filter . "')";
+
+            $res = $this->db->query($query);
+
+            if($this->db->countAffected()==0)
+                return 2;
+            else {
+                $data = 0;
+                if(    (strpos( $count, "-" ) !== false)
+                    || (strpos( $count, "Нет" ) !== false)
+                    || (strpos( $count, "нет" ) !== false)
+                    || (strpos( $count, "НЕТ" ) !== false)
+                    || (strpos( $count, "N" ) !== false)
+                    || (strpos( $count, "n" ) !== false)
+                )
+                    $data = 3; // is absent
+                else
+                    $data = 1;// is present
+
+                $quantity = 0;
+                foreach ($res->rows as $result) {
+                    $quantity = $result['quantity'];
+                }
+                if ( $quantity==1 && $data == 3)
+                    $data = 2; // 2-3 days
+
+                return $data*10;
+            }
         }
-        if ( $quantity==1 && $data == 3)
-            $data = 2; // 2-3 days
+        else {
+            $data = 0;
+            if(    (strpos( $count, "-" ) !== false)
+                || (strpos( $count, "Нет" ) !== false)
+                || (strpos( $count, "нет" ) !== false)
+                || (strpos( $count, "НЕТ" ) !== false)
+                || (strpos( $count, "N" ) !== false)
+                || (strpos( $count, "n" ) !== false)
+            )
+                $data = 3; // is absent
+            else
+                $data = 1;// is present
 
-        $this->db->query("UPDATE " . DB_PREFIX . "product SET quantity = '".$data."' WHERE " .
-            DB_PREFIX . "product.product_id  IN ( SELECT product_id FROM " . DB_PREFIX . "product_description  WHERE name like '" . $filter . "')");
-        if($this->db->countAffected()!=0)
-            return 1;
+            $quantity = 0;
+            foreach ($res->rows as $result) {
+                $quantity = $result['quantity'];
+            }
+            if ( $quantity==1 && $data == 3)
+                $data = 2; // 2-3 days
 
-        return 0;
+            return $data*10;
+        }
     }
 
     public function parse_name($name){

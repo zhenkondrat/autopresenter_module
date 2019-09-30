@@ -1,5 +1,21 @@
 <?php echo $header; ?>
-<?php echo $column_left; ?>
+<?php echo $column_left;
+
+function titleCount($count){
+   if ($count == -1) {
+      return '-';
+      } elseif ($count == 1) {
+      return 'В наличии';
+      } elseif ($count == 2) {
+          return 'В наличии (2-3 дня)';
+      } if ($count == 3) {
+          return 'Отсуцтвует';
+      } else {
+          return 'Уточняйте';
+      }
+}
+
+?>
 <div id="content">
   <div class="page-header">
     <div class="container-fluid">
@@ -46,7 +62,6 @@
                     <tr>
                       <th scope="col">#</th>
                       <th scope="col">Нозвание</th>
-                      <th scope="col">Старое количество</th>
                       <th scope="col">Новое количество</th>
                     </tr> 
                   </thead>
@@ -59,8 +74,7 @@
                       <tr>
                         <th scope="row"><?= $index ?></th>
                         <td><?= $item['name'] ?></td>
-                        <td><?= $item['old_count'] ?></td>
-                        <td><?= $item['new_count'] ?></td>
+                        <td><?= titleCount($item['new_count']) ?></td>
                       </tr>                                    
                     <?php
                       } 
@@ -75,7 +89,6 @@
               <tr>
                 <th scope="col">#</th>
                 <th scope="col">Нозвание</th>
-                <th scope="col">Старое количество</th>
                 <th scope="col">Новое количество</th>
               </tr>
               </thead>
@@ -88,8 +101,7 @@
               <tr>
                 <th scope="row"><?= $index ?></th>
                 <td><?= $item['name'] ?></td>
-                <td><?= $item['old_count'] ?></td>
-                <td><?= $item['new_count'] ?></td>
+                <td><?= titleCount($item['new_count']) ?></td>
               </tr>
               <?php
                       }
@@ -142,7 +154,6 @@
                     <tr>
                       <th scope="col">#</th>
                       <th scope="col">Нозвание</th>
-                      <th scope="col">Старое количество</th>
                       <th scope="col">Новое количество</th>
                     </tr>
                   </thead>
@@ -155,8 +166,7 @@
                       <tr>
                         <th scope="row"><?= $index ?></th>
                         <td><?= $item['name'] ?></td>
-                        <td><?= $item['old_count'] ?></td>
-                        <td><?= $item['new_count'] ?></td>
+                        <td><?= titleCount($item['new_count']) ?></td>
                       </tr>                                    
                     <?php
                       } 
@@ -171,7 +181,6 @@
                     <tr>
                       <th scope="col">#</th>
                       <th scope="col">Нозвание</th>
-                      <th scope="col">Старое количество</th>
                       <th scope="col">Новое количество</th>
                     </tr>
                   </thead>
@@ -184,8 +193,7 @@
                       <tr>
                         <th scope="row"><?= $index ?></th>
                         <td><?= $item['name'] ?></td>
-                        <td><?= $item['old_count'] ?></td>
-                        <td><?= $item['new_count'] ?></td>
+                        <td><?= titleCount($item['new_count']) ?></td>
                       </tr>                                    
                     <?php
                       } 
