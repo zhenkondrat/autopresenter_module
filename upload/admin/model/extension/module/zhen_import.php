@@ -432,12 +432,12 @@ class ModelExtensionModuleZhenImport extends Model{
                 else
                     $data = 1;// is present
 
-                $quantity = 0;
-                foreach ($res->rows as $result) {
-                    $quantity = $result['quantity'];
-                }
-                if ( $quantity==1 && $data == 3)
-                    $data = 2; // 2-3 days
+//                $quantity = 0;
+//                foreach ($res->rows as $result) {
+//                    $quantity = $result['quantity'];
+//                }
+//                if ( $quantity==1 && $data == 3)
+//                    $data = 2; // 2-3 days
 
                 return $data*10;
             }
