@@ -5,11 +5,11 @@ function titleCount($count){
    if ($count == -1) {
       return '-';
       } elseif ($count == 1) {
-      return 'В наличии';
+      return 'Доступно';
       } elseif ($count == 2) {
-          return 'В наличии (2-3 дня)';
+          return 'Доступно (2-3 дня)';
       } if ($count == 3) {
-          return 'Отсуцтвует';
+          return 'Нет в наличии';
       } else {
           return 'Уточняйте';
       }

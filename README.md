@@ -47,11 +47,11 @@ to:
 
 ```
     if ($product_info['quantity'] == 1) {
-        $data['stock'] = 'В наличии';
+        $data['stock'] = 'Доступно';
         } elseif ($product_info['quantity'] == 2) {
-            $data['stock'] = 'В наличии (2-3 дня)';
+            $data['stock'] = 'Доступно (2-3 дня)';
         } if ($product_info['quantity'] == 3) {
-            $data['stock'] = 'Отсутствует';
+            $data['stock'] = 'Нет в наличии';
         } if ($product_info['quantity'] == 100) {
             $data['stock'] = 'Уточняйте';
         } else {
