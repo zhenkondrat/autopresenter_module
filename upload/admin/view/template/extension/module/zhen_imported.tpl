@@ -1,5 +1,7 @@
 <?php echo $header; ?>
-<?php echo $column_left; ?>
+<?php echo $column_left;
+      $mas = $mas[1];
+?>
 <div id="content">
   <div class="page-header">
     <div class="container-fluid">
@@ -38,8 +40,9 @@
                   <tbody>
                     <?php
                       $index=0;
-                      foreach( $mas["updated"] as $item){
-                        $index++;
+                      if(isset($mas["updated"]))
+                        foreach( $mas["updated"] as $item){
+                          $index++;
                     ?>
                       <tr>
                         <th scope="row"><?= $index ?></th>
@@ -67,8 +70,9 @@
                   <tbody>
                     <?php
                       $index=0;
-                      foreach( $mas["noupdated"] as $item){
-                        $index++;
+                      if(isset($mas["noupdated"]))
+                        foreach( $mas["noupdated"] as $item){
+                          $index++;
                     ?>
                       <tr>
                         <th scope="row"><?= $index ?></th>

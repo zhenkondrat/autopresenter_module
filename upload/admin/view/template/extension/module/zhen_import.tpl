@@ -233,8 +233,6 @@ function checkFileSize(id) {
     return true;
   }
   else if (!input.files[0]) {
-    // no file has been selected for the upload
-    alert( "<?php echo $error_select_file; ?>" );
     return false;
   }
   else {
@@ -244,7 +242,6 @@ function checkFileSize(id) {
     // check against PHP's post_max_size
     post_max_size = <?php echo $post_max_size; ?>;
     if (file_size > post_max_size) {
-      alert( "<?php echo $error_post_max_size; ?>" );
       return false;
     }
     <?php } ?>
@@ -252,7 +249,6 @@ function checkFileSize(id) {
     // check against PHP's upload_max_filesize
     upload_max_filesize = <?php echo $upload_max_filesize; ?>;
     if (file_size > upload_max_filesize) {
-      alert( "<?php echo $error_upload_max_filesize; ?>" );
       return false;
     }
     <?php } ?>
