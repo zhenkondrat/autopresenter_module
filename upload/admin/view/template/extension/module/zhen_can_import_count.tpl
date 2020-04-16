@@ -4,11 +4,11 @@
 function titleCount($count){
    if ($count == -1) {
       return '-';
-      } elseif ($count == 1) {
+      } elseif ($count == 101) {
       return 'Доступно';
-      } elseif ($count == 2) {
+      } elseif ($count == 102) {
           return 'Доступно (2-3 дня)';
-      } if ($count == 3) {
+      } if ($count == 103) {
           return 'Нет в наличии';
       } else {
           return 'Уточняйте';

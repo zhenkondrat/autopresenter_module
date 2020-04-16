@@ -228,9 +228,9 @@ class ModelExtensionModuleZhenImport extends Model{
 
     /*
         quantity id description:
-         1 - present product
-         2 - present product(2-3 day)
-         3 - absent product
+         101 - present product
+         102 - present product(2-3 day)
+         103 - absent product
          100 - need specify
      */
     public function tryUpdateCount($name, $count, $default_filter){
@@ -284,9 +284,9 @@ class ModelExtensionModuleZhenImport extends Model{
                     || (strpos( $count, "N" ) !== false)
                     || (strpos( $count, "n" ) !== false)
                 )
-                    return 3*10; // is absent
+                    return 103; // is absent
                 else
-                    return 1*10;// is present
+                    return 101;// is present
             }
         }
         else {
@@ -297,9 +297,9 @@ class ModelExtensionModuleZhenImport extends Model{
                 || (strpos( $count, "N" ) !== false)
                 || (strpos( $count, "n" ) !== false)
             )
-                return 3*10; // is absent
+                return 103; // is absent
             else
-                return 1*10;// is present
+                return 101;// is present
         }
     }
 
@@ -428,18 +428,18 @@ class ModelExtensionModuleZhenImport extends Model{
                     || (strpos( $count, "N" ) !== false)
                     || (strpos( $count, "n" ) !== false)
                 )
-                    $data = 3; // is absent
+                    $data = 103; // is absent
                 else
-                    $data = 1;// is present
+                    $data = 101;// is present
 
 //                $quantity = 0;
 //                foreach ($res->rows as $result) {
 //                    $quantity = $result['quantity'];
 //                }
 //                if ( $quantity==1 && $data == 3)
-//                    $data = 2; // 2-3 days
+//                    $data = 102; // 2-3 days
 
-                return $data*10;
+                return $data;
             }
         }
         else {
@@ -451,18 +451,18 @@ class ModelExtensionModuleZhenImport extends Model{
                 || (strpos( $count, "N" ) !== false)
                 || (strpos( $count, "n" ) !== false)
             )
-                $data = 3; // is absent
+                $data = 103; // is absent
             else
-                $data = 1;// is present
+                $data = 101;// is present
 
             $quantity = 0;
             foreach ($res->rows as $result) {
                 $quantity = $result['quantity'];
             }
-            if ( $quantity==1 && $data == 3)
-                $data = 2; // 2-3 days
+            if ( $quantity==101 && $data == 103)
+                $data = 102; // 2-3 days
 
-            return $data*10;
+            return $data;
         }
     }
 
@@ -560,7 +560,7 @@ class ModelExtensionModuleZhenImport extends Model{
                                 array_push($mas["finded"], $row);
                         }
                         else{
-                            $row['new_count'] = $res / 10;
+                            $row['new_count'] = $res;
                             array_push($mas["finded"], $row);
                         }
                     }
