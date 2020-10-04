@@ -8,7 +8,7 @@ function titleCount($count){
       return 'Доступно';
       } elseif ($count == 102) {
           return 'Доступно (2-3 дня)';
-      } if ($count == 103) {
+      } if ($count == 99) {
           return 'Нет в наличии';
       } else {
           return 'Уточняйте';

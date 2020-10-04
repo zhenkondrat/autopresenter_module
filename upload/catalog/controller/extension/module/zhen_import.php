@@ -42,7 +42,7 @@ class ControllerExtensionModuleZhenImport extends Controller {
             $data['stock'] = 'В наличии';
             } elseif ($product_info['quantity'] == 102) {
             $data['stock'] = 'В наличии (2-3 дня)';
-            } if ($product_info['quantity'] == 103) {
+            } if ($product_info['quantity'] == 99) {
                 $data['stock'] = 'Отсуцтвует';
             } if ($product_info['quantity'] == 100) {
                 $data['stock'] = 'Уточняйте';

@@ -50,7 +50,7 @@ to:
         $data['stock'] = 'Доступно';
         } elseif ($product_info['quantity'] == 2) {
             $data['stock'] = 'Доступно (2-3 дня)';
-        } if ($product_info['quantity'] == 3) {
+        } if ($product_info['quantity'] == 99) {
             $data['stock'] = 'Нет в наличии';
         } if ($product_info['quantity'] == 100) {
             $data['stock'] = 'Уточняйте';

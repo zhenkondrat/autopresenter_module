@@ -230,7 +230,7 @@ class ModelExtensionModuleZhenImport extends Model{
         quantity id description:
          101 - present product
          102 - present product(2-3 day)
-         103 - absent product
+         99 - absent product
          100 - need specify
      */
     public function tryUpdateCount($name, $count, $default_filter){
@@ -284,7 +284,7 @@ class ModelExtensionModuleZhenImport extends Model{
                     || (strpos( $count, "N" ) !== false)
                     || (strpos( $count, "n" ) !== false)
                 )
-                    return 103; // is absent
+                    return 99; // is absent
                 else
                     return 101;// is present
             }
@@ -297,7 +297,7 @@ class ModelExtensionModuleZhenImport extends Model{
                 || (strpos( $count, "N" ) !== false)
                 || (strpos( $count, "n" ) !== false)
             )
-                return 103; // is absent
+                return 99; // is absent
             else
                 return 101;// is present
         }
@@ -428,7 +428,7 @@ class ModelExtensionModuleZhenImport extends Model{
                     || (strpos( $count, "N" ) !== false)
                     || (strpos( $count, "n" ) !== false)
                 )
-                    $data = 103; // is absent
+                    $data = 99; // is absent
                 else
                     $data = 101;// is present
 
@@ -451,7 +451,7 @@ class ModelExtensionModuleZhenImport extends Model{
                 || (strpos( $count, "N" ) !== false)
                 || (strpos( $count, "n" ) !== false)
             )
-                $data = 103; // is absent
+                $data = 99; // is absent
             else
                 $data = 101;// is present
 
@@ -459,7 +459,7 @@ class ModelExtensionModuleZhenImport extends Model{
             foreach ($res->rows as $result) {
                 $quantity = $result['quantity'];
             }
-            if ( $quantity==101 && $data == 103)
+            if ( $quantity==101 && $data == 99)
                 $data = 102; // 2-3 days
 
             return $data;
@@ -500,6 +500,8 @@ class ModelExtensionModuleZhenImport extends Model{
         if(!$this->table_exists(DB_PREFIX . "zhen_not_founded"))
            $this->create_nofinded_table();
 
+
+//        $query = $this->db->query("UPDATE `oc_product` SET `quantity`= 99 WHERE `quantity` = 103");
 
         /* get needed update attribute */
         $func = 0;
